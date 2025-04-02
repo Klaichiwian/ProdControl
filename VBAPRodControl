@@ -1,0 +1,52 @@
+Sub FindSubParts()
+    Dim ws As Worksheet
+    Dim mainPart As String
+    Dim dict As Object
+    Dim output As String
+    
+    Set ws = ThisWorkbook.Sheets("Main-Sub Part List")
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Get the main part number from user
+    mainPart = InputBox("Enter Main Part Number:")
+    If mainPart = "" Then Exit Sub
+    
+    ' Build dictionary from the sheet
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    For i = 2 To lastRow ' Assuming headers in row 1
+        Dim mp As String, sp As String
+        mp = ws.Cells(i, 1).Value ' Main Part Number column
+        sp = ws.Cells(i, 2).Value ' Sub Part Number column
+        
+        If mp <> "" And sp <> "" Then
+            If Not dict.exists(mp) Then
+                Set dict(mp) = New Collection
+            End If
+            dict(mp).Add sp
+        End If
+    Next i
+    
+    ' Print hierarchical structure
+    output = "Structure for " & mainPart & ":" & vbNewLine
+    Call PrintHierarchy(mainPart, dict, output, "")
+    
+    ' Show result in immediate window
+    Debug.Print output
+    
+    ' Show result in message box
+    MsgBox output, vbInformation, "Part Structure"
+    
+    Set dict = Nothing
+End Sub
+
+Sub PrintHierarchy(ByVal mainPart As String, ByVal dict As Object, ByRef output As String, ByVal indent As String)
+    Dim i As Integer
+    If dict.exists(mainPart) Then
+        For i = 1 To dict(mainPart).Count
+            output = output & indent & "├── " & dict(mainPart).Item(i) & vbNewLine
+            Call PrintHierarchy(dict(mainPart).Item(i), dict, output, indent & "    ") ' Recursive call with indentation
+        Next i
+    End If
+End Sub
